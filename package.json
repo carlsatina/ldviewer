@@ -1,0 +1,23 @@
+{
+  "name": "echonet-device-description-viewer",
+  "version": "0.0.1",
+  "description": "ECHONET Lite Device Description Viewer",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Hiroyuki Fujita",
+    "email": "hiro.fujita@he.kanagawa-it.ac.jp",
+    "url": "https://github.com/fujita-kait"
+  },
+  "keywords": [
+    "Echonet Lite",
+    "KAIT"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.1.1"
+  }
+}

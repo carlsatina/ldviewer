@@ -1,0 +1,249 @@
+<!--device-description-viewer/index.html-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ECHONET Device Description Viewer</title>
+  <link rel="stylesheet" href="libs/themes/default/style.min.css" />
+</head>
+<body>
+  <h1>ECHONET Lite Device Description Viewer</h1>
+  <h4><div id="meta-appendix"></div></h4>
+  <div id="meta-release"></div><br>
+  <div>
+    Language: 
+    <input type="radio" class="radioButton" id="ja" name="lang" checked  onchange="drawTree()"> 
+    <label for="ja" class="radioButtonLabel">ja</label>
+    <input type="radio" class="radioButton" id="en" name="lang" onchange="drawTree()"> 
+    <label for="ja" class="radioButtonLabel">en</label>
+  </div>
+  <h2>Super Class</h2>
+  <div id="common"></div>
+  <h2>Devices</h2>
+  <div id="devices"></div>
+
+  <script src="libs/jquery/jquery-3.3.1.min.js"></script>
+  <script src="libs/jstree.min.js"></script>
+
+<script>
+var requestURL = 'json/EL_DeviceDescription.json';
+var request = new XMLHttpRequest();
+let jsonData ={};
+
+request.open('GET', requestURL);
+request.responseType = 'json';
+request.send();
+request.onload = function() {
+  jsonData = request.response;
+  updateJsonData();
+  drawMeta();
+  drawTree();
+}
+
+function drawMeta() {
+  const appendix = "Appendix Release: " + jsonData.metaData.release;
+  const jsonInfo = "JSON data Version: " + jsonData.metaData.version +
+    ", update: " + jsonData.metaData.date;
+  document.getElementById("meta-appendix").textContent = appendix;
+  document.getElementById("meta-release").textContent = jsonInfo;
+}
+
+function drawTree() {
+  const language = (document.getElementById("ja").checked) ? "ja" : "en";
+  let commonObject = createCommonObject(language);
+  let devicesObject = createDevicesObject(language);
+
+  $.jstree.destroy ();
+  $.jstree.defaults.core.themes.dots = false;
+  $(function() {
+    $('#common').jstree(commonObject);
+    $('#devices').jstree(devicesObject);
+  });
+}
+
+function createCommonObject(language) {
+  let elObject = {
+    'core' : {
+      'data' : [
+        {
+          "text": "Super Class",
+          "children": []
+        }
+      ]
+    }
+  };
+
+  for(let property of jsonData.common.properties) {
+    let epc = {
+      "text": epcAndDescription(property, language),
+      "children" : [
+        accessRule(property),
+        dataFormat(property, language)
+      ]
+    };
+    elObject.core.data[0].children.push(epc);  
+  }
+  return elObject;
+}
+
+function dataFormat(property, language){
+  if (!property.data) {
+    return { "text": "Data Format: "};
+  }
+  let dataFormat = { "text": "Data Format: " + property.data.type };
+  let dataDescription =[];
+  switch (property.data.type){
+    case "enum":
+      for (value of property.data.values) {
+        const description = value[language];
+        dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
+      }
+      break;
+    case "number":
+      break;
+    case "level":
+      break;
+    case "raw":
+      const a = (property.data.size == 1) ? " byte " : " bytes ";
+      let b = "";
+      if (language == "ja") {
+        b = (property.data.isFixedSize) ? "固定長データ": "可変長データ";
+      } else {
+        b = (property.data.isFixedSize) ? "fixed size data": "variable size data";
+      }
+      dataDescription.push({"text": property.data.size + a + b, "icon": "jstree-file"}); 
+      break;
+    case "array":
+      break;
+    case "composite":
+      break;
+    case "object":
+      break;
+    default:
+  }
+  dataFormat.children = dataDescription;
+  return dataFormat;
+}
+
+function epcAndDescription(property, language){
+  if (property.description) {
+    return (property.epc + "&nbsp" + property.description[language] +
+      " (from " + property.validRelease.from + " to " + property.validRelease.to + ")");
+  } else {
+    return "";
+  }
+}
+  
+function accessRule(property){
+  if (!property.accessRule) {
+    return {"text": "Access rule" };
+  }
+  return {
+    "text": "Access rule",
+    "children" : [
+      {"text": "Get: " + property.accessRule.get, "icon": "jstree-file"},
+      {"text": "Set: " + property.accessRule.set, "icon": "jstree-file"},
+      {"text": "Anno: " + property.accessRule.inf, "icon": "jstree-file"}
+    ]
+  };
+}
+
+function createDevicesObject(language) {
+  let elObjects = {
+    'core' : {
+      'data' : []
+    }
+  };
+
+  for(let device of jsonData.devices) {
+    let deviceObject = {
+      "text": deviceAndDescription(device, language),
+      "children": []
+    };
+    for(let property of device.properties) {
+      // propertyがjsonData.commonの要素かどうかの確認
+      let epc = {
+        "text": epcAndDescription(property, language),
+        "children" : [
+          accessRule(property),
+          dataFormat(property, language)
+        ]
+      };
+      deviceObject.children.push(epc);  
+    }
+    elObjects.core.data.push(deviceObject);      
+  }
+  return elObjects;
+}
+
+function deviceAndDescription(device, language){
+  return device.eoj + "&nbsp" + device.description[language] + 
+    " (since release: " + device.firstRelease + ")";
+}
+
+function updateJsonData(){
+  for(let device of jsonData.devices) {
+    let indices = [];
+    for(let property of device.properties) {
+      const epc = parseInt(property.epc);
+      common: {
+        if ((epc >= 0x80) && (epc <= 0x9F)) {
+          for (commonProperty of jsonData.common.properties) {
+            if (commonProperty.epc == property.epc){
+              if (property.accessRule){
+                if ((property.accessRule.get == "notApplicable") &&
+                    (property.accessRule.set == "notApplicable") &&
+                    (property.accessRule.inf == "notApplicable")){
+                  const index = device.properties.indexOf(property);
+                  indices.push(index);
+                  break common;
+                }
+              }              
+              if (!property.description){
+                property.description = commonProperty.description;
+              }
+              if (!property.validRelease){
+                property.validRelease = commonProperty.validRelease;
+              }
+              if (!property.accessRule){
+                property.accessRule = commonProperty.accessRule;
+              }
+              if (!property.data){
+                property.data = commonProperty.data;
+              }
+              if (!property.note){
+                property.note = (commonProperty.note) ? commonProperty.note : undefined;
+              }
+            }
+          }
+        }
+      }
+    }
+    // remove properties of node profile if all accessRule are "notApplicable"
+    if (indices.length !== 0){
+      indices.sort((a,b) => {return (a < b ? 1 : -1);}
+      );
+      for (const index of indices) {
+        device.properties.splice(index, 1);
+      }
+    }
+  }
+  //  remove properties of common if all accessRule are "notApplicable"
+  let indices = [];
+  for (property of jsonData.common.properties) {
+    if ((property.accessRule.get == "notApplicable") &&
+        (property.accessRule.set == "notApplicable") &&
+        (property.accessRule.inf == "notApplicable")){
+      const index = jsonData.common.properties.indexOf(property);
+      indices.push(index);
+    }
+  }
+  indices.sort((a,b) => {return (a < b ? 1 : -1);}
+  );
+  for (const index of indices) {
+    jsonData.common.properties.splice(index, 1);
+  }
+}
+
+</script></body>
+</html>
