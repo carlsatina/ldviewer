@@ -1,6 +1,6 @@
 {
     "metaData": {
-        "date":"2018-07-26",
+        "date":"2018-07-27",
         "release":"J",
         "version":"1.2.1"
     },
@@ -44,7 +44,7 @@
                     "size":4
                 },
                 "note":{
-                    "jp":"1,2,4バイト目は0x00。3バイト目で機器オブジェクトのReleaseを示す。Release Aは0x41、以下数値をインクリメントする。",
+                    "ja":"1,2,4バイト目は0x00。3バイト目で機器オブジェクトのReleaseを示す。Release Aは0x41、以下数値をインクリメントする。",
                     "en":"1st, 2nd and 4th byte data is 0x00. 3rd data represents Release of Device Object."
                 }
             },
@@ -59,7 +59,7 @@
                     "size":17
                 },
                 "note":{
-                    "jp":"1バイト目は0xFE。2〜4バイト目はメーカコード。残りは機器毎のユニーク値",
+                    "ja":"1バイト目は0xFE。2〜4バイト目はメーカコード。残りは機器毎のユニーク値",
                     "en":"1st byte is 0xFE. 2nd to 4th data is manufacture code. Rest of data should be unique value to each device."
                 }
             },
@@ -375,7 +375,7 @@
                     "size":17
                 },
                 "note":{
-                    "jp":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
+                    "ja":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
                     "en":""
                 }
             },
@@ -390,7 +390,7 @@
                     "size":17
                 },
                 "note":{
-                    "jp":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
+                    "ja":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
                     "en":""
                 }
             },
@@ -405,7 +405,7 @@
                     "size":17
                 },
                 "note":{
-                    "jp":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
+                    "ja":"プロパティの個数が15以下の場合：１バイト目はプロパティの個数、２バイト目以降はEPCを列挙。プロパティの個数が16以上の場合：１バイト目はプロパティの個数、２バイト目以降はbitmap",
                     "en":""
                 }
             }
@@ -5106,7 +5106,7 @@
         },
         {
             "epc":"0xA8",
-            "description":{ "ja":"AC積算充電電力量計測値<br>", "en":"AC measured cumulative charging electric energy" },
+            "description":{ "ja":"AC積算充電電力量計測値", "en":"AC measured cumulative charging electric energy" },
             "validRelease":{"from":"H", "to":"latest"},
             "accessRule":{"get":"required", "set":"notApplicable", "inf":"optional"},
             "data":{
@@ -5121,7 +5121,7 @@
         },
         {
             "epc":"0xA9",
-            "description":{ "ja":"AC積算放電電力量計測値<br>", "en":"AC measured cumulative discharging electric energy" },
+            "description":{ "ja":"AC積算放電電力量計測値", "en":"AC measured cumulative discharging electric energy" },
             "validRelease":{"from":"H", "to":"latest"},
             "accessRule":{"get":"required", "set":"notApplicable", "inf":"optional"},
             "data":{
@@ -5200,7 +5200,7 @@
         },
         {
             "epc":"0xC8",
-            "description":{ "ja":"最小最大充電電力値<br>", "en":"Min/Max charging electric power" },
+            "description":{ "ja":"最小最大充電電力値", "en":"Min/Max charging electric power" },
             "validRelease":{"from":"B", "to":"latest"},
             "accessRule":{"get":"required", "set":"notApplicable", "inf":"optional"},
             "data":{
@@ -5235,7 +5235,7 @@
         },
         {
             "epc":"0xC9",
-            "description":{ "ja":"最小最大放電電力値<br>", "en":"Min/Max discharging electric power" },
+            "description":{ "ja":"最小最大放電電力値", "en":"Min/Max discharging electric power" },
             "validRelease":{"from":"B", "to":"latest"},
             "accessRule":{"get":"required", "set":"notApplicable", "inf":"optional"},
             "data":{
@@ -12634,7 +12634,7 @@
             "description":{ "ja":"Version情報", "en":"Version information" },
             "validRelease":{"from":"A", "to":"latest"},
             "note":{
-                "jp":"1バイト目：メジャーバージョン。2バイト目：マイナーバージョン。3バイト目：電文形式をbitmapで示す。４バイト目：0x00",
+                "ja":"1バイト目：メジャーバージョン。2バイト目：マイナーバージョン。3バイト目：電文形式をbitmapで示す。４バイト目：0x00",
                 "en":"1st byte: major version, 2nd byte: minor version, 3rd data: bitmap of data format, 4th byte: 0x00"
             }
         },
@@ -12720,7 +12720,7 @@
                 "size":3
             },
             "note":{
-                "jp":"ノードプロファイルオブジェクトのインスタンスは含まない",
+                "ja":"ノードプロファイルオブジェクトのインスタンスは含まない",
                 "en":"excluding node profile object instance"
             }
         },
@@ -12737,7 +12737,7 @@
                 "size":2
             },
             "note":{
-                "jp":"ノードプロファイルクラスを含む",
+                "ja":"ノードプロファイルクラスを含む",
                 "en":"including node profile class"
             }
         },
@@ -12778,7 +12778,7 @@
                 ]
             },
             "note":{
-                "jp":"インスタンスリストは機器オブジェクトの３バイトのEOJを列挙する",
+                "ja":"インスタンスリストは機器オブジェクトの３バイトのEOJを列挙する",
                 "en":"Instance list is an array of EOJ(3 bytes)"
             }
         },
@@ -12819,7 +12819,7 @@
                 ]
             },
             "note":{
-                "jp":"インスタンスリストは３バイトのEOJを列挙する",
+                "ja":"インスタンスリストは３バイトのEOJを列挙する",
                 "en":"Instance list is an array of EOJ(3 bytes)"
             }
         },
@@ -12860,7 +12860,7 @@
                 ]
             },
             "note":{
-                "jp":"ノードプロファイルクラスは除く",
+                "ja":"ノードプロファイルクラスは除く",
                 "en":"Excluding node profile class"
             }
         }

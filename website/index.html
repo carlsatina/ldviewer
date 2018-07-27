@@ -1,4 +1,4 @@
-<!--device-description-viewer/index.html-->
+<!--EL-device-description-viewer/index.html-->
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,7 +18,7 @@
     <label for="ja" class="radioButtonLabel">en</label>
   </div>
   <h2>Super Class</h2>
-  <div id="common"></div>
+  <div id="superclass"></div>
   <h2>Devices</h2>
   <div id="devices"></div>
 
@@ -28,7 +28,8 @@
 <script>
 var requestURL = 'json/EL_DeviceDescription.json';
 var request = new XMLHttpRequest();
-let jsonData ={};
+let jsonData = {};
+let language = "ja";
 
 request.open('GET', requestURL);
 request.responseType = 'json';
@@ -49,19 +50,19 @@ function drawMeta() {
 }
 
 function drawTree() {
-  const language = (document.getElementById("ja").checked) ? "ja" : "en";
-  let commonObject = createCommonObject(language);
-  let devicesObject = createDevicesObject(language);
+  language = (document.getElementById("ja").checked) ? "ja" : "en";
+  let superClass = createSuperClass();
+  let devicesObject = createDevicesObject();
 
   $.jstree.destroy ();
   $.jstree.defaults.core.themes.dots = false;
   $(function() {
-    $('#common').jstree(commonObject);
+    $('#superclass').jstree(superClass);
     $('#devices').jstree(devicesObject);
   });
 }
 
-function createCommonObject(language) {
+function createSuperClass() {
   let elObject = {
     'core' : {
       'data' : [
@@ -75,10 +76,12 @@ function createCommonObject(language) {
 
   for(let property of jsonData.common.properties) {
     let epc = {
-      "text": epcAndDescription(property, language),
+      "text": epcAndDescription(property),
+      "text": epcAndDescription(property),
       "children" : [
         accessRule(property),
-        dataFormat(property, language)
+        createDataFormat(property.data),
+        note(property)
       ]
     };
     elObject.core.data[0].children.push(epc);  
@@ -86,38 +89,69 @@ function createCommonObject(language) {
   return elObject;
 }
 
-function dataFormat(property, language){
-  if (!property.data) {
-    return { "text": "Data Format: "};
-  }
-  let dataFormat = { "text": "Data Format: " + property.data.type };
+function createDataFormat(data){
+  let dataFormat = { "text": "Data format: " + data.type };
   let dataDescription =[];
-  switch (property.data.type){
+  switch (data.type){
+    // TODO: number, readonlyの実装
     case "enum":
-      for (value of property.data.values) {
+      for (value of data.values) {
         const description = value[language];
         dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
       }
       break;
     case "number":
+      dataDescription.push({"text": "isUnsigned: " + data.isUnsigned, "icon": "jstree-file"}); 
+      dataDescription.push({"text": "size: " + data.size + "byte", "icon": "jstree-file"}); 
+      dataDescription.push({"text": "unit: " + data.unit, "icon": "jstree-file"});
+      if (data.minimum !== undefined){
+        dataDescription.push({"text": "minimum: " + data.minimum, "icon": "jstree-file"});   
+      }
+      if (data.maximum){
+        dataDescription.push({"text": "maximum: " + data.maximum, "icon": "jstree-file"}); 
+      }
+      if (data.magnification){
+        dataDescription.push({"text": "magnification: " + data.magnification, "icon": "jstree-file"}); 
+      }
+      if (data.coefficient){
+        dataDescription.push({"text": "coefficient: " + data.coefficient, "icon": "jstree-file"}); 
+      }
       break;
     case "level":
+      dataDescription.push({"text": "base: " + data.base, "icon": "jstree-file"}); 
+      dataDescription.push({"text": "maximum: " + data.maximum, "icon": "jstree-file"}); 
+      break;
+    case "bitmap":
+      break;
+    case "date-time":
+      break;
+    case "time":
       break;
     case "raw":
-      const a = (property.data.size == 1) ? " byte " : " bytes ";
+      const a = (data.size == 1) ? " byte " : " bytes ";
       let b = "";
       if (language == "ja") {
-        b = (property.data.isFixedSize) ? "固定長データ": "可変長データ";
+        b = (data.isFixedSize) ? "固定長データ": "可変長データ";
       } else {
-        b = (property.data.isFixedSize) ? "fixed size data": "variable size data";
+        b = (data.isFixedSize) ? "fixed size data": "variable size data";
       }
-      dataDescription.push({"text": property.data.size + a + b, "icon": "jstree-file"}); 
+      dataDescription.push({"text": data.size + a + b, "icon": "jstree-file"});
       break;
     case "array":
+      const prefix = data.isFixedNumberOfItems ? "" : "最大";
+      dataDescription.push({"text": "個数 " + data.numberOfItems, "icon": "jstree-file"});
+      dataDescription.push(createDataFormat(data.data));
       break;
     case "composite":
+      for (const element of data.elements) {
+        dataDescription.push(createDataFormat(element));
+      }
       break;
     case "object":
+      for (const element of data.elements) {
+        dataDescription.push({"text": element.description[language], "icon": "jstree-file"});
+        dataDescription.push(createDataFormat(element.data));
+      }
       break;
     default:
   }
@@ -125,7 +159,7 @@ function dataFormat(property, language){
   return dataFormat;
 }
 
-function epcAndDescription(property, language){
+function epcAndDescription(property){
   if (property.description) {
     return (property.epc + "&nbsp" + property.description[language] +
       " (from " + property.validRelease.from + " to " + property.validRelease.to + ")");
@@ -133,11 +167,8 @@ function epcAndDescription(property, language){
     return "";
   }
 }
-  
+
 function accessRule(property){
-  if (!property.accessRule) {
-    return {"text": "Access rule" };
-  }
   return {
     "text": "Access rule",
     "children" : [
@@ -148,7 +179,13 @@ function accessRule(property){
   };
 }
 
-function createDevicesObject(language) {
+function note(property){
+  if (property.note) {
+    return { "text": "Note: " + property.note[language], "icon": "jstree-file" };
+  }
+}  
+
+function createDevicesObject() {
   let elObjects = {
     'core' : {
       'data' : []
@@ -157,16 +194,17 @@ function createDevicesObject(language) {
 
   for(let device of jsonData.devices) {
     let deviceObject = {
-      "text": deviceAndDescription(device, language),
+      "text": deviceAndDescription(device),
       "children": []
     };
     for(let property of device.properties) {
       // propertyがjsonData.commonの要素かどうかの確認
       let epc = {
-        "text": epcAndDescription(property, language),
+        "text": epcAndDescription(property),
         "children" : [
           accessRule(property),
-          dataFormat(property, language)
+          createDataFormat(property.data),
+          note(property)
         ]
       };
       deviceObject.children.push(epc);  
@@ -176,11 +214,13 @@ function createDevicesObject(language) {
   return elObjects;
 }
 
-function deviceAndDescription(device, language){
+function deviceAndDescription(device){
   return device.eoj + "&nbsp" + device.description[language] + 
     " (since release: " + device.firstRelease + ")";
 }
 
+// fill data for overrided EPCs (EPC: 0x80-0x9F)
+// then remove EPCs (EPC: 0x80-0x9F) in case all accessRules are "notApplicable" for cosmetics
 function updateJsonData(){
   for(let device of jsonData.devices) {
     let indices = [];
@@ -221,14 +261,13 @@ function updateJsonData(){
     }
     // remove properties of node profile if all accessRule are "notApplicable"
     if (indices.length !== 0){
-      indices.sort((a,b) => {return (a < b ? 1 : -1);}
-      );
+      indices.sort((a,b) => {return (a < b ? 1 : -1);});
       for (const index of indices) {
         device.properties.splice(index, 1);
       }
     }
   }
-  //  remove properties of common if all accessRule are "notApplicable"
+  // search remove targets
   let indices = [];
   for (property of jsonData.common.properties) {
     if ((property.accessRule.get == "notApplicable") &&
@@ -238,8 +277,9 @@ function updateJsonData(){
       indices.push(index);
     }
   }
-  indices.sort((a,b) => {return (a < b ? 1 : -1);}
-  );
+  // sort by reverse order
+  indices.sort((a,b) => {return (a < b ? 1 : -1);});
+  // remove properties
   for (const index of indices) {
     jsonData.common.properties.splice(index, 1);
   }
