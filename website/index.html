@@ -11,10 +11,10 @@
   <h4><div id="meta-appendix"></div></h4>
   <div id="meta-release"></div><br>
   <div>
-    Language: 
-    <input type="radio" class="radioButton" id="ja" name="lang" checked  onchange="drawTree()"> 
+    Language:
+    <input type="radio" class="radioButton" id="ja" name="lang" checked  onchange="drawTree()">
     <label for="ja" class="radioButtonLabel">ja</label>
-    <input type="radio" class="radioButton" id="en" name="lang" onchange="drawTree()"> 
+    <input type="radio" class="radioButton" id="en" name="lang" onchange="drawTree()">
     <label for="ja" class="radioButtonLabel">en</label>
   </div>
   <h2>Super Class</h2>
@@ -22,12 +22,12 @@
   <h2>Devices</h2>
   <div id="devices"></div>
 
-  <script src="libs/jquery/jquery-3.3.1.min.js"></script>
-  <script src="libs/jstree.min.js"></script>
+<script src="libs/jquery/jquery-3.3.1.min.js"></script>
+<script src="libs/jstree.min.js"></script>
 
 <script>
-var requestURL = 'json/EL_DeviceDescription.json';
-var request = new XMLHttpRequest();
+const requestURL = 'json/EL_DeviceDescription.json';
+const request = new XMLHttpRequest();
 let jsonData = {};
 let language = "ja";
 
@@ -44,7 +44,7 @@ request.onload = function() {
 function drawMeta() {
   const appendix = "Appendix Release: " + jsonData.metaData.release;
   const jsonInfo = "JSON data Version: " + jsonData.metaData.version +
-    ", update: " + jsonData.metaData.date;
+                   ", update: " + jsonData.metaData.date;
   document.getElementById("meta-appendix").textContent = appendix;
   document.getElementById("meta-release").textContent = jsonInfo;
 }
@@ -54,12 +54,33 @@ function drawTree() {
   let superClass = createSuperClass();
   let devicesObject = createDevicesObject();
 
-  $.jstree.destroy ();
+  $.jstree.destroy();
   $.jstree.defaults.core.themes.dots = false;
   $(function() {
     $('#superclass').jstree(superClass);
     $('#devices').jstree(devicesObject);
   });
+
+  // Toggle node:
+  $('#superclass').on("changed.jstree", function (e, data) {
+    const path = $('#superclass').jstree('get_path', data.selected);
+    const is_closed = $('#superclass').jstree('is_closed', data.selected);
+    if ((path.length > 1) && is_closed) {
+      $('#superclass').jstree('open_all', data.selected);
+    } else {
+      $('#superclass').jstree('toggle_node', data.selected);                
+    }
+  });  
+  $('#devices').on("changed.jstree", function (e, data) {
+    const path = $('#devices').jstree('get_path', data.selected);
+    const is_closed = $('#devices').jstree('is_closed', data.selected);
+    if ((path.length > 1) && is_closed) {
+      $('#devices').jstree('open_all', data.selected);
+    } else {
+      $('#devices').jstree('toggle_node', data.selected);                
+    }
+  });  
+
 }
 
 function createSuperClass() {
@@ -73,10 +94,8 @@ function createSuperClass() {
       ]
     }
   };
-
   for(let property of jsonData.common.properties) {
     let epc = {
-      "text": epcAndDescription(property),
       "text": epcAndDescription(property),
       "children" : [
         accessRule(property),
@@ -89,32 +108,59 @@ function createSuperClass() {
   return elObject;
 }
 
+function epcAndDescription(property){
+  if (property.description) {
+    return (property.epc + "&nbsp" + property.description[language] +
+      " (from " + property.validRelease.from + " to " + property.validRelease.to + ")");
+  } else {
+    return "";
+  }
+}
+
+function accessRule(property){
+  return {
+    "text": "Access rule",
+    "children" : [
+      {"text": "Get: " + property.accessRule.get, "icon": "jstree-file"},
+      {"text": "Set: " + property.accessRule.set, "icon": "jstree-file"},
+      {"text": "Anno: " + property.accessRule.inf, "icon": "jstree-file"}
+    ]
+  };
+}
+
 function createDataFormat(data){
   let dataFormat = { "text": "Data format: " + data.type };
   let dataDescription =[];
   switch (data.type){
-    // TODO: number, readonlyの実装
     case "enum":
       for (value of data.values) {
-        const description = value[language];
+        const description = (value[language] ? value[language] : value.number) + 
+              (value.readOnly ? " (read only)" : "");
         dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
       }
       break;
     case "number":
-      dataDescription.push({"text": "isUnsigned: " + data.isUnsigned, "icon": "jstree-file"}); 
-      dataDescription.push({"text": "size: " + data.size + "byte", "icon": "jstree-file"}); 
-      dataDescription.push({"text": "unit: " + data.unit, "icon": "jstree-file"});
+      const labelNumber = data.isUnsigned ? "unsigned " : "signed ";
+      dataDescription.push({"text": labelNumber + data.size + " byte", "icon": "jstree-file"});
+      if (data.unit){
+        const label = (language == "ja") ?  "単位 " : "unit  ";
+        dataDescription.push({"text": label + data.unit, "icon": "jstree-file"});        
+      }
       if (data.minimum !== undefined){
-        dataDescription.push({"text": "minimum: " + data.minimum, "icon": "jstree-file"});   
+        const label = (language == "ja") ?  "最小値 " : "minimum  ";
+        dataDescription.push({"text": label + data.minimum, "icon": "jstree-file"});   
       }
       if (data.maximum){
-        dataDescription.push({"text": "maximum: " + data.maximum, "icon": "jstree-file"}); 
+        const label = (language == "ja") ?  "最大値 " : "maximum  ";
+        dataDescription.push({"text": label + data.maximum, "icon": "jstree-file"}); 
       }
       if (data.magnification){
-        dataDescription.push({"text": "magnification: " + data.magnification, "icon": "jstree-file"}); 
+        const label = (language == "ja") ?  "倍率 " : "magnification ";
+        dataDescription.push({"text": label + data.magnification, "icon": "jstree-file"}); 
       }
       if (data.coefficient){
-        dataDescription.push({"text": "coefficient: " + data.coefficient, "icon": "jstree-file"}); 
+        const label = (language == "ja") ?  "係数 " : "coefficient ";
+        dataDescription.push({"text": label + data.coefficient, "icon": "jstree-file"}); 
       }
       break;
     case "level":
@@ -137,9 +183,12 @@ function createDataFormat(data){
       }
       dataDescription.push({"text": data.size + a + b, "icon": "jstree-file"});
       break;
+    // TODO: English
     case "array":
-      const prefix = data.isFixedNumberOfItems ? "" : "最大";
-      dataDescription.push({"text": "個数 " + data.numberOfItems, "icon": "jstree-file"});
+      const labelArrayJa = "要素数 " + (data.isFixedNumberOfItems ? "" : "最大");
+      const labelArrayEn = "number of elements " + (data.isFixedNumberOfItems ? "" : "maximum");
+      const labelArray = (language == "ja") ? labelArrayJa : labelArrayEn;
+      dataDescription.push({"text": labelArray + data.numberOfItems, "icon": "jstree-file"});
       dataDescription.push(createDataFormat(data.data));
       break;
     case "composite":
@@ -157,26 +206,6 @@ function createDataFormat(data){
   }
   dataFormat.children = dataDescription;
   return dataFormat;
-}
-
-function epcAndDescription(property){
-  if (property.description) {
-    return (property.epc + "&nbsp" + property.description[language] +
-      " (from " + property.validRelease.from + " to " + property.validRelease.to + ")");
-  } else {
-    return "";
-  }
-}
-
-function accessRule(property){
-  return {
-    "text": "Access rule",
-    "children" : [
-      {"text": "Get: " + property.accessRule.get, "icon": "jstree-file"},
-      {"text": "Set: " + property.accessRule.set, "icon": "jstree-file"},
-      {"text": "Anno: " + property.accessRule.inf, "icon": "jstree-file"}
-    ]
-  };
 }
 
 function note(property){

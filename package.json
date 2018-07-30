@@ -1,5 +1,5 @@
 {
-  "name": "echonet-device-description-viewer",
+  "name": "el-ddviewer",
   "version": "0.0.1",
   "description": "ECHONET Lite Device Description Viewer",
   "main": "app.js",
@@ -16,8 +16,11 @@
     "KAIT"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/futomi/node-echonet-lite.git"
+  },
   "dependencies": {
-    "express": "^4.16.3",
-    "socket.io": "^2.1.1"
+    "express": "^4.16.3"
   }
 }
