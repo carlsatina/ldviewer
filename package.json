@@ -18,7 +18,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/futomi/node-echonet-lite.git"
+    "url": "git+https://github.com/fujita-kait/EL-device-description-viewer.git"
   },
   "dependencies": {
     "express": "^4.16.3"
