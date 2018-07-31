@@ -191,7 +191,7 @@ function createDataFormat(data){
       dataDescription.push({"text": labelArray + data.numberOfItems, "icon": "jstree-file"});
       dataDescription.push(createDataFormat(data.data));
       break;
-    case "composite":
+    case "oneOf":
       for (const element of data.elements) {
         dataDescription.push(createDataFormat(element));
       }
