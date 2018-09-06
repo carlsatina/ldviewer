@@ -1,6 +1,6 @@
 {
   "name": "el-ddviewer",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "ECHONET Lite Device Description Viewer",
   "main": "app.js",
   "scripts": {

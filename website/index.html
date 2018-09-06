@@ -94,7 +94,7 @@ function createSuperClass() {
       ]
     }
   };
-  for(let property of jsonData.common.properties) {
+  for(let property of jsonData.common.elProperties) {
     let epc = {
       "text": epcAndDescription(property),
       "children" : [
@@ -109,8 +109,8 @@ function createSuperClass() {
 }
 
 function epcAndDescription(property){
-  if (property.description) {
-    return (property.epc + "&nbsp" + property.description[language] +
+  if (property.propertyName) {
+    return (property.epc + "&nbsp" + property.propertyName[language] +
       " (from " + property.validRelease.from + " to " + property.validRelease.to + ")");
   } else {
     return "";
@@ -121,88 +121,113 @@ function accessRule(property){
   return {
     "text": "Access rule",
     "children" : [
-      {"text": "Get: " + property.accessRule.get, "icon": "jstree-file"},
-      {"text": "Set: " + property.accessRule.set, "icon": "jstree-file"},
-      {"text": "Anno: " + property.accessRule.inf, "icon": "jstree-file"}
+      {"text": "Get " + property.accessRule.get, "icon": "jstree-file"},
+      {"text": "Set " + property.accessRule.set, "icon": "jstree-file"},
+      {"text": "Inf " + property.accessRule.inf, "icon": "jstree-file"}
     ]
   };
 }
 
 function createDataFormat(data){
-  let dataFormat = { "text": "Data format: " + data.type };
+  let dataFormat;
   let dataDescription =[];
-  switch (data.type){
-    case "enum":
-      for (value of data.values) {
-        const description = (value[language] ? value[language] : value.number) + 
-              (value.readOnly ? " (read only)" : "");
-        dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
-      }
-      break;
-    case "number":
-      const labelNumber = data.isUnsigned ? "unsigned " : "signed ";
-      dataDescription.push({"text": labelNumber + data.size + " byte", "icon": "jstree-file"});
-      if (data.unit){
-        const label = (language == "ja") ?  "単位 " : "unit  ";
-        dataDescription.push({"text": label + data.unit, "icon": "jstree-file"});        
-      }
-      if (data.minimum !== undefined){
-        const label = (language == "ja") ?  "最小値 " : "minimum  ";
-        dataDescription.push({"text": label + data.minimum, "icon": "jstree-file"});   
-      }
-      if (data.maximum){
-        const label = (language == "ja") ?  "最大値 " : "maximum  ";
-        dataDescription.push({"text": label + data.maximum, "icon": "jstree-file"}); 
-      }
-      if (data.magnification){
-        const label = (language == "ja") ?  "倍率 " : "magnification ";
-        dataDescription.push({"text": label + data.magnification, "icon": "jstree-file"}); 
-      }
-      if (data.coefficient){
-        const label = (language == "ja") ?  "係数 " : "coefficient ";
-        dataDescription.push({"text": label + data.coefficient, "icon": "jstree-file"}); 
-      }
-      break;
-    case "level":
-      dataDescription.push({"text": "base: " + data.base, "icon": "jstree-file"}); 
-      dataDescription.push({"text": "maximum: " + data.maximum, "icon": "jstree-file"}); 
-      break;
-    case "bitmap":
-      break;
-    case "date-time":
-      break;
-    case "time":
-      break;
-    case "raw":
-      const a = (data.size == 1) ? " byte " : " bytes ";
-      let b = "";
-      if (language == "ja") {
-        b = (data.isFixedSize) ? "固定長データ": "可変長データ";
-      } else {
-        b = (data.isFixedSize) ? "fixed size data": "variable size data";
-      }
-      dataDescription.push({"text": data.size + a + b, "icon": "jstree-file"});
-      break;
-    // TODO: English
-    case "array":
-      const labelArrayJa = "要素数 " + (data.isFixedNumberOfItems ? "" : "最大");
-      const labelArrayEn = "number of elements " + (data.isFixedNumberOfItems ? "" : "maximum");
-      const labelArray = (language == "ja") ? labelArrayJa : labelArrayEn;
-      dataDescription.push({"text": labelArray + data.numberOfItems, "icon": "jstree-file"});
-      dataDescription.push(createDataFormat(data.data));
-      break;
-    case "oneOf":
-      for (const element of data.elements) {
-        dataDescription.push(createDataFormat(element));
-      }
-      break;
-    case "object":
-      for (const element of data.elements) {
-        dataDescription.push({"text": element.description[language], "icon": "jstree-file"});
-        dataDescription.push(createDataFormat(element.data));
-      }
-      break;
-    default:
+  if (data.oneOf){
+    dataFormat = { "text": "Data type: oneOf"};
+    for (const dataType of data.oneOf) {
+      dataDescription.push({"text": dataType.type, "icon": "jstree-file"});
+      dataDescription.push(createDataFormat(dataType));
+    }
+  } else {
+    dataFormat = { "text": "Data type: " + data.type };
+    switch (data.type){
+      case "state":
+        for (let value of data.enum) {
+          const description = value.state[language] + (value.readOnly ? " (read only)" : "");
+          dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
+        }
+        break;
+      case "numericValue":
+        for (let value of data.enum) {
+          const description = value.numericValue;
+          dataDescription.push({"text": value.edt + "&nbsp" + description, "icon": "jstree-file"});
+        }
+        break;
+      case "number":
+        dataDescription.push({"text": "format " + data.format, "icon": "jstree-file"});
+        if (data.unit){
+          const label = (language == "ja") ?  "単位 " : "unit  ";
+          dataDescription.push({"text": label + data.unit, "icon": "jstree-file"});        
+        }
+        if (data.minimum !== undefined){  // must use "!== undefined" in case of 0
+          const label = (language == "ja") ?  "最小値 " : "minimum  ";
+          dataDescription.push({"text": label + data.minimum, "icon": "jstree-file"});   
+        }
+        if (data.maximum){
+          const label = (language == "ja") ?  "最大値 " : "maximum  ";
+          dataDescription.push({"text": label + data.maximum, "icon": "jstree-file"}); 
+        }
+        if (data.enum){
+          let values = "";
+          for (let value of data.enum) {
+            values += (value + ", ");
+          }
+          values = values.slice(0, -2); // remove last ", "
+          dataDescription.push({"text": "enum " + values, "icon": "jstree-file"}); 
+        }
+        if (data.multipleOf){
+          const label = (language == "ja") ?  "倍率 " : "magnification ";
+          dataDescription.push({"text": label + data.multipleOf, "icon": "jstree-file"}); 
+        }
+        if (data.coefficient){
+          const label = (language == "ja") ?  "係数 " : "coefficient ";
+          dataDescription.push({"text": label + data.coefficient, "icon": "jstree-file"}); 
+        }
+        break;
+      case "level":
+        dataDescription.push({"text": "base: " + data.base, "icon": "jstree-file"}); 
+        dataDescription.push({"text": "maximum: " + data.maximum, "icon": "jstree-file"}); 
+        break;
+      case "bitmap":
+        dataDescription.push({"text": "size: " + data.size + " byte", "icon": "jstree-file"}); 
+        for (const bitmap of data.bitmaps) {
+          dataDescription.push({"text": "name: " + bitmap.name, "icon": "jstree-file"});
+          const description = bitmap.descriptions[language];
+          dataDescription.push({"text": "description: " + description, "icon": "jstree-file"});
+          dataDescription.push({"text": "position index: " + bitmap.position.index + ", bitmask: " +
+            bitmap.position.bitMask, "icon": "jstree-file"});
+          dataDescription.push(createDataFormat(bitmap.value));
+        }
+        break;
+      case "date-time":
+        break;
+      case "time":
+        break;
+      case "raw":
+        if (data.minSize){
+          dataDescription.push({"text": "min size " + data.minSize + "byte", "icon": "jstree-file"});
+        }
+        dataDescription.push({"text": "max size " + data.maxSize + "byte", "icon": "jstree-file"});
+        break;
+      case "array":
+        if (data.minItems){
+          dataDescription.push({"text": "min items " + data.minItems, "icon": "jstree-file"});
+        }
+        dataDescription.push({"text": "max items " + data.maxItems, "icon": "jstree-file"});
+        dataDescription.push(createDataFormat(data.items));
+        break;
+      case "oneOf":
+        for (const element of data.elements) {
+          dataDescription.push(createDataFormat(element));
+        }
+        break;
+      case "object":
+        for (const key of Object.keys(data.properties)) {
+          dataDescription.push({"text": key, "icon": "jstree-file"});
+          dataDescription.push(createDataFormat(data.properties[key]));
+        }
+        break;
+      default:
+    }
   }
   dataFormat.children = dataDescription;
   return dataFormat;
@@ -226,7 +251,7 @@ function createDevicesObject() {
       "text": deviceAndDescription(device),
       "children": []
     };
-    for(let property of device.properties) {
+    for(let property of device.elProperties) {
       // propertyがjsonData.commonの要素かどうかの確認
       let epc = {
         "text": epcAndDescription(property),
@@ -244,7 +269,7 @@ function createDevicesObject() {
 }
 
 function deviceAndDescription(device){
-  return device.eoj + "&nbsp" + device.description[language] + 
+  return device.eoj + "&nbsp" + device. className[language] + 
     " (since release: " + device.firstRelease + ")";
 }
 
@@ -253,23 +278,23 @@ function deviceAndDescription(device){
 function updateJsonData(){
   for(let device of jsonData.devices) {
     let indices = [];
-    for(let property of device.properties) {
+    for(let property of device.elProperties) {
       const epc = parseInt(property.epc);
       common: {
         if ((epc >= 0x80) && (epc <= 0x9F)) {
-          for (commonProperty of jsonData.common.properties) {
+          for (commonProperty of jsonData.common.elProperties) {
             if (commonProperty.epc == property.epc){
               if (property.accessRule){
                 if ((property.accessRule.get == "notApplicable") &&
                     (property.accessRule.set == "notApplicable") &&
                     (property.accessRule.inf == "notApplicable")){
-                  const index = device.properties.indexOf(property);
+                  const index = device.elProperties.indexOf(property);
                   indices.push(index);
                   break common;
                 }
               }              
-              if (!property.description){
-                property.description = commonProperty.description;
+              if (!property.propertyName){
+                property.propertyName = commonProperty.propertyName;
               }
               if (!property.validRelease){
                 property.validRelease = commonProperty.validRelease;
@@ -292,17 +317,17 @@ function updateJsonData(){
     if (indices.length !== 0){
       indices.sort((a,b) => {return (a < b ? 1 : -1);});
       for (const index of indices) {
-        device.properties.splice(index, 1);
+        device.elProperties.splice(index, 1);
       }
     }
   }
   // search remove targets
   let indices = [];
-  for (property of jsonData.common.properties) {
+  for (property of jsonData.common.elProperties) {
     if ((property.accessRule.get == "notApplicable") &&
         (property.accessRule.set == "notApplicable") &&
         (property.accessRule.inf == "notApplicable")){
-      const index = jsonData.common.properties.indexOf(property);
+      const index = jsonData.common.elProperties.indexOf(property);
       indices.push(index);
     }
   }
@@ -310,7 +335,7 @@ function updateJsonData(){
   indices.sort((a,b) => {return (a < b ? 1 : -1);});
   // remove properties
   for (const index of indices) {
-    jsonData.common.properties.splice(index, 1);
+    jsonData.common.elProperties.splice(index, 1);
   }
 }
 
