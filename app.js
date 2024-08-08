@@ -8,6 +8,6 @@ const app = express();
 // const fs = require('fs');
 
 app.use(express.static('./website'));
-app.listen(3000, ()=> {
-  console.log('access localhost:3000');
+app.listen(4000, ()=> {
+  console.log('access localhost:4000');
 });
